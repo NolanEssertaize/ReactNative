@@ -35,7 +35,7 @@ export default function App() {
                 <Text style={styles.title}>{item}</Text>
                 <Pressable
                 style={styles.button}
-                onPress={() => setmodalEdit(!modalEdit)}
+                onPress={(item, i) => console.log("item: ",item," i : ", i)} //Pass the element
                 >
                 <Text>Edit</Text></Pressable>
               </View>
@@ -111,7 +111,7 @@ export default function App() {
               </Pressable>
               <Pressable
                 style={[styles.button]}
-                onPress={(item, i) => console.log("item: ",item," i : ", i)}>
+                onPress={() => setmodalEdit(!modalEdit)}>
                 <Text style={styles.button}>Return</Text>
               </Pressable>
             </View>
