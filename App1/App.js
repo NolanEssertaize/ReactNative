@@ -1,17 +1,27 @@
 import React, {useState} from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, SectionList, Button, Alert ,Modal, Pressable} from 'react-native';
+import { StyleSheet, Text, View, SectionList, Button, Alert ,Modal, Pressable, TextInput} from 'react-native';
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 
-var DATA = [
-  {
-    title: "Exemple",
-    data: ["Sport"]
-  },
-]
+var DATA = []
+
+function create_goal(title, desc){
+  DATA.push({
+    title: title,
+    data: [desc]
+  });
+  title = null
+  desc = null
+  Alert.alert('Created');
+}
 
 export default function App() {
-  const [modalVisible, setModalVisible] = useState(false);
+  const [modalCreate, setmodalCreate] = useState(false);
+  const [modalEdit, setmodalEdit] = useState(false);
+  const [title, setTitle] = useState('');
+  const [desc, setDesc] = useState('');
+  const titleEdit = "";
+  const descEdit = "";
   return (
     <View style={styles.container}>
       <SafeAreaProvider>
@@ -23,6 +33,11 @@ export default function App() {
             renderItem={({item}) => (
               <View style={styles.item}>
                 <Text style={styles.title}>{item}</Text>
+                <Pressable
+                style={styles.button}
+                onPress={() => setmodalEdit(!modalEdit)}
+                >
+                <Text>Edit</Text></Pressable>
               </View>
             )}
             renderSectionHeader={({section: {title}}) => (
@@ -31,35 +46,82 @@ export default function App() {
           />
         </SafeAreaView>
       </SafeAreaProvider>
-      <View style={styles.bottom_nav_bar}>
+      <View>
         <Modal
-          title="create"
           animationType="slide"
           transparent={true}
-          visible={modalVisible}
+          visible={modalCreate}
           onRequestClose={() => {
             Alert.alert('Modal has been closed.');
-            setModalVisible(!modalVisible);
+            setmodalCreate(!modalCreate);
           }}>
           <View style={styles.centeredView}>
             <View style={styles.modalView}>
-              <Text style={styles.modalText}>Hello World!</Text>
+              <TextInput 
+              style={styles.input} 
+              placeholder='Title' 
+              onChangeText={(text) => setTitle(text)}
+              ></TextInput>
+
+              <TextInput 
+              style={styles.input} 
+              placeholder='Description'
+              onChangeText={(text) => setDesc(text)}
+              ></TextInput>
+
               <Pressable
-                style={[styles.button, styles.buttonClose]}
-                onPress={() => setModalVisible(!modalVisible)}>
-                <Text style={styles.textStyle}>Hide Modal</Text>
+                style={[styles.button]}
+                onPress={() => create_goal(title, desc)}>
+                <Text style={styles.button}>Create Goal</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.button]}
+                onPress={() => setmodalCreate(!modalCreate)}>
+                <Text style={styles.button}>Return</Text>
               </Pressable>
             </View>
           </View>
         </Modal>
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalEdit}
+          onRequestClose={() => {
+            Alert.alert('Modal has been closed.');
+            setmodalCreate(!modalEdit);
+          }}>
+          <View style={styles.centeredView}>
+            <View style={styles.modalView}>
+              <TextInput 
+              style={styles.input} 
+              placeholder='Title' 
+              onChangeText={(text) => setTitle(text)}
+              ></TextInput>
+
+              <TextInput 
+              style={styles.input} 
+              placeholder='Description'
+              onChangeText={(text) => setDesc(text)}
+              ></TextInput>
+
+              <Pressable
+                style={[styles.button]}
+                onPress={() => create_goal(title, desc)}>
+                <Text style={styles.button}>Edit Goal</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.button]}
+                onPress={(item, i) => console.log("item: ",item," i : ", i)}>
+                <Text style={styles.button}>Return</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+      </View>
+      <View style={styles.bottom_nav_bar}>
         <Pressable
-          style={[styles.button, styles.buttonOpen]}
-          onPress={() => setModalVisible(true)}>
-          <Text style={styles.button}>Edit Goal</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.button, styles.buttonOpen]}
-          onPress={() => setModalVisible(true)}>
+          style={[styles.button]}
+          onPress={() => setmodalCreate(true)}>
           <Text style={styles.button}>Create Goal</Text>
         </Pressable>
       </View>
@@ -74,11 +136,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  Modal: {
+    width:150,
+  },
   modalView: {
-    margin: 20,
     backgroundColor: 'white',
     borderRadius: 20,
-    padding: 150,
+    width: 350,
+    height: 450,
+    padding: 50,
     paddingBottom: 100,
     alignItems: 'center',
     shadowColor: '#000',
@@ -89,6 +155,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+  },
+  modalInput: {
+    backgroundColor: "Black"
   },
   container: {
     flex: 1,
@@ -118,9 +187,8 @@ const styles = StyleSheet.create({
   bottom_nav_bar: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    margin: 30,
-    justifyContent:"space-between"
-    
+    margin: 40,
+    justifyContent: "center"
   },
   button: {
     fontSize: 20,
@@ -129,6 +197,10 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     textDecorationLine: "underline",
     backgroundColor: '#B0B0B0'
+  },
+  input: {
+    fontSize: 20,
+    borderRadius: 10,
+    margin: 10,  
   }
- 
 });
