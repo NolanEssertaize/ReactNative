@@ -1,18 +1,36 @@
 import React, {useState} from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, SectionList, Button, Alert ,Modal, Pressable, TextInput} from 'react-native';
+import { StyleSheet, Text, View, SectionList, Alert, Modal, Pressable, TextInput, ImageBackground} from 'react-native';
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 
-var DATA = []
+var DATA = [
+  {
+    id: 0,
+    title: "Titre exemple",
+    data: ["Description exemple"]
+  },
+]
 
 function create_goal(title, desc){
   DATA.push({
+    id: DATA.length,
     title: title,
     data: [desc]
   });
-  title = null
-  desc = null
+
   Alert.alert('Created');
+}
+
+function edit_goal(id, newTitle, newDesc) {
+  const index = DATA.findIndex(item => item.id === id);
+  if (index !== -1) {
+    DATA[index] = {
+      ...DATA[index],
+      title: newTitle,
+      data: [newDesc]
+    };
+    Alert.alert('Updated');
+  }
 }
 
 export default function App() {
@@ -20,113 +38,170 @@ export default function App() {
   const [modalEdit, setmodalEdit] = useState(false);
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
-  const titleEdit = "";
-  const descEdit = "";
+  const [editingId, setEditingId] = useState(null);
+
+  const handleEdit = (id) => {
+    const item = DATA.find(item => item.id === id);
+    if (item) {
+      setTitle(item.title);
+      setDesc(item.data[0]);
+      setEditingId(id);
+      setmodalEdit(true);
+    }
+  };
+
+  const handleEditSubmit = () => {
+    if (editingId !== null) {
+      edit_goal(editingId, title, desc);
+      setmodalEdit(false);
+      setTitle('');
+      setDesc('');
+      setEditingId(null);
+    }
+  };
+
+  const handleDelete = () => {
+    DATA.pop(
+      id=editingId
+    )
+    Alert.alert("Goal deleted")
+  }
+
+
   return (
-    <View style={styles.container}>
-      <SafeAreaProvider>
-        <SafeAreaView style={styles.container} edges={['top']}>
-        <Text style={styles.Text}>Goal</Text>
-          <SectionList
-            sections={DATA}
-            keyExtractor={(item, index) => item + index}
-            renderItem={({item}) => (
-              <View style={styles.item}>
-                <Text style={styles.title}>{item}</Text>
+    <ImageBackground source={require("./img/background.jpg")} resizeMode="cover" style={styles.image}>  
+      <View style={styles.container}> 
+        <SafeAreaProvider>
+            <SafeAreaView style={styles.container} edges={['top']}>
+            <Text style={styles.Text}>Goal</Text>
+              <SectionList
+                sections={DATA}
+                keyExtractor={(item, index) => item + index}
+                renderItem={({item, index, section}) => (
+                  <View style={styles.item}>
+                    <Text style={styles.title}>{item}</Text>
+                    <Pressable
+                      style={styles.button}
+                      onPress={() => handleEdit(section.id)}
+                    >
+                      <Text>Edit</Text>
+                    </Pressable>
+                  </View>
+                )}
+                renderSectionHeader={({section: {title}}) => (
+                  <Text style={styles.header}>{title}</Text>
+                )}
+              />
+            </SafeAreaView>
+        </SafeAreaProvider>
+        <View>
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalCreate}
+            onRequestClose={() => {
+              Alert.alert('Modal has been closed.');
+              setmodalCreate(!modalCreate);
+            }}>
+            <View style={styles.centeredView}>
+              <View style={styles.modalView}>
+                <TextInput 
+                  style={styles.input} 
+                  placeholder='Title' 
+                  onChangeText={setTitle}
+                  value={title}
+                />
+                <TextInput 
+                  style={styles.input} 
+                  placeholder='Description'
+                  onChangeText={setDesc}
+                  value={desc}
+                />
                 <Pressable
-                style={styles.button}
-                onPress={(item, i) => console.log("item: ",item," i : ", i)} //Pass the element
-                >
-                <Text>Edit</Text></Pressable>
+                  style={[styles.button]}
+                  onPress={() => {
+                    create_goal(title, desc);
+                    setTitle('');
+                    setDesc('');
+                    setmodalCreate(false);
+                  }}>
+                  <Text style={styles.button}>Create Goal</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.button]}
+                  onPress={() => {
+                    setmodalCreate(false);
+                    setTitle('');
+                    setDesc('');
+                  }}>
+                  <Text style={styles.button}>Return</Text>
+                </Pressable>
               </View>
-            )}
-            renderSectionHeader={({section: {title}}) => (
-              <Text style={styles.header}>{title}</Text>
-            )}
-          />
-        </SafeAreaView>
-      </SafeAreaProvider>
-      <View>
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={modalCreate}
-          onRequestClose={() => {
-            Alert.alert('Modal has been closed.');
-            setmodalCreate(!modalCreate);
-          }}>
-          <View style={styles.centeredView}>
-            <View style={styles.modalView}>
-              <TextInput 
-              style={styles.input} 
-              placeholder='Title' 
-              onChangeText={(text) => setTitle(text)}
-              ></TextInput>
-
-              <TextInput 
-              style={styles.input} 
-              placeholder='Description'
-              onChangeText={(text) => setDesc(text)}
-              ></TextInput>
-
-              <Pressable
-                style={[styles.button]}
-                onPress={() => create_goal(title, desc)}>
-                <Text style={styles.button}>Create Goal</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.button]}
-                onPress={() => setmodalCreate(!modalCreate)}>
-                <Text style={styles.button}>Return</Text>
-              </Pressable>
             </View>
-          </View>
-        </Modal>
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={modalEdit}
-          onRequestClose={() => {
-            Alert.alert('Modal has been closed.');
-            setmodalCreate(!modalEdit);
-          }}>
-          <View style={styles.centeredView}>
-            <View style={styles.modalView}>
-              <TextInput 
-              style={styles.input} 
-              placeholder='Title' 
-              onChangeText={(text) => setTitle(text)}
-              ></TextInput>
-
-              <TextInput 
-              style={styles.input} 
-              placeholder='Description'
-              onChangeText={(text) => setDesc(text)}
-              ></TextInput>
-
-              <Pressable
-                style={[styles.button]}
-                onPress={() => create_goal(title, desc)}>
-                <Text style={styles.button}>Edit Goal</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.button]}
-                onPress={() => setmodalEdit(!modalEdit)}>
-                <Text style={styles.button}>Return</Text>
-              </Pressable>
+          </Modal>
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalEdit}
+            onRequestClose={() => {
+              setmodalEdit(false);
+              setTitle('');
+              setDesc('');
+              setEditingId(null);
+            }}>
+            <View style={styles.centeredView}>
+              <View style={styles.modalView}>
+                <TextInput 
+                  style={styles.input} 
+                  placeholder='Title' 
+                  onChangeText={setTitle}
+                  value={title}
+                />
+                <TextInput 
+                  style={styles.input} 
+                  placeholder='Description'
+                  onChangeText={setDesc}
+                  value={desc}
+                />
+                <Pressable
+                  style={[styles.button]}
+                  onPress={handleEditSubmit}>
+                  <Text style={styles.button}>Edit Goal</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.button]}
+                  onPress={() => {
+                    setmodalEdit(false);
+                    setTitle('');
+                    setDesc('');
+                    setEditingId(null);
+                  }}>
+                  <Text style={styles.button}>Return</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.button]}
+                  onPress={() => {
+                    handleDelete();
+                    setTitle('');
+                    setDesc('');
+                    setmodalEdit(false);
+                  }}>
+                  <Text style={styles.button}>Delete</Text>
+                </Pressable>
+              </View>
             </View>
-          </View>
-        </Modal>
+          </Modal>
+        </View>
+        <View style={styles.bottom_nav_bar}>
+          <Pressable
+            style={[styles.button]}
+            onPress={() => setmodalCreate(true)}>
+            <Text style={styles.button}>Create Goal</Text>
+          </Pressable>
+        </View>
+        <StatusBar style="auto" />
       </View>
-      <View style={styles.bottom_nav_bar}>
-        <Pressable
-          style={[styles.button]}
-          onPress={() => setmodalCreate(true)}>
-          <Text style={styles.button}>Create Goal</Text>
-        </Pressable>
-      </View>
-      <StatusBar style="auto" />
-    </View>
+    </ImageBackground>
   );
 }
 
@@ -171,8 +246,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   header: {
-    fontSize: 32,
-    backgroundColor: '#fff',
+    fontSize: 32
   },
   title: {
     fontSize: 24,
@@ -193,6 +267,7 @@ const styles = StyleSheet.create({
   button: {
     fontSize: 20,
     color:"white",
+    margin:10,
     padding: 5,
     borderRadius: 5,
     textDecorationLine: "underline",
@@ -201,6 +276,16 @@ const styles = StyleSheet.create({
   input: {
     fontSize: 20,
     borderRadius: 10,
-    margin: 10,  
-  }
+    margin: 10,
+    padding: 10,
+    width: '100%',
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    color: '#000',
+  },
+  image: {
+    flex: 1,
+    justifyContent: 'center',
+  },
 });
