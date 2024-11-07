@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, SectionList, Alert, Modal, Pressable, TextInput, ImageBackground} from 'react-native';
+import { StyleSheet, Text, View, SectionList, Alert, Modal, TextInput, ImageBackground, TouchableOpacity} from 'react-native';
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 
 var DATA = [
@@ -80,12 +80,12 @@ export default function App() {
                 renderItem={({item, index, section}) => (
                   <View style={styles.item}>
                     <Text style={styles.title}>{item}</Text>
-                    <Pressable
+                    <TouchableOpacity
                       style={styles.button}
                       onPress={() => handleEdit(section.id)}
                     >
                       <Text>Edit</Text>
-                    </Pressable>
+                    </TouchableOpacity>
                   </View>
                 )}
                 renderSectionHeader={({section: {title}}) => (
@@ -117,7 +117,7 @@ export default function App() {
                   onChangeText={setDesc}
                   value={desc}
                 />
-                <Pressable
+                <TouchableOpacity
                   style={[styles.button]}
                   onPress={() => {
                     create_goal(title, desc);
@@ -126,8 +126,8 @@ export default function App() {
                     setmodalCreate(false);
                   }}>
                   <Text style={styles.button}>Create Goal</Text>
-                </Pressable>
-                <Pressable
+                </TouchableOpacity>
+                <TouchableOpacity
                   style={[styles.button]}
                   onPress={() => {
                     setmodalCreate(false);
@@ -135,7 +135,7 @@ export default function App() {
                     setDesc('');
                   }}>
                   <Text style={styles.button}>Return</Text>
-                </Pressable>
+                </TouchableOpacity>
               </View>
             </View>
           </Modal>
@@ -163,12 +163,12 @@ export default function App() {
                   onChangeText={setDesc}
                   value={desc}
                 />
-                <Pressable
+                <TouchableOpacity
                   style={[styles.button]}
                   onPress={handleEditSubmit}>
                   <Text style={styles.button}>Edit Goal</Text>
-                </Pressable>
-                <Pressable
+                </TouchableOpacity>
+                <TouchableOpacity
                   style={[styles.button]}
                   onPress={() => {
                     setmodalEdit(false);
@@ -177,8 +177,8 @@ export default function App() {
                     setEditingId(null);
                   }}>
                   <Text style={styles.button}>Return</Text>
-                </Pressable>
-                <Pressable
+                </TouchableOpacity>
+                <TouchableOpacity
                   style={[styles.button]}
                   onPress={() => {
                     handleDelete();
@@ -187,17 +187,17 @@ export default function App() {
                     setmodalEdit(false);
                   }}>
                   <Text style={styles.button}>Delete</Text>
-                </Pressable>
+                </TouchableOpacity>
               </View>
             </View>
           </Modal>
         </View>
         <View style={styles.bottom_nav_bar}>
-          <Pressable
+          <TouchableOpacity
             style={[styles.button]}
             onPress={() => setmodalCreate(true)}>
             <Text style={styles.button}>Create Goal</Text>
-          </Pressable>
+          </TouchableOpacity>
         </View>
         <StatusBar style="auto" />
       </View>
@@ -246,6 +246,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   header: {
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
     fontSize: 32
   },
   title: {
