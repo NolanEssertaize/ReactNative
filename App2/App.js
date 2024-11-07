@@ -1,292 +1,237 @@
-import React, {useState} from 'react';
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, SectionList, Alert, Modal, TextInput, ImageBackground, TouchableOpacity} from 'react-native';
-import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+import { useState, useEffect, useCallback } from 'react';
+import { 
+  Platform, 
+  Text, 
+  View, 
+  StyleSheet, 
+  RefreshControl,
+  ScrollView,
+  ActivityIndicator
+} from 'react-native';
+import * as Location from 'expo-location';
 
-var DATA = [
-  {
-    id: 0,
-    title: "Titre exemple",
-    data: ["Description exemple"]
+// Constants
+const API_KEY = "37e5671ad13b7cb4a14b3b187479acc5";
+const BASE_URL = "https://api.openweathermap.org/data/2.5/forecast";
+
+// Weather Service
+const WeatherService = {
+  async fetchWeather(lat, lon) {
+    try {
+      const response = await fetch(`${BASE_URL}?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=fr`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching weather:', error);
+      throw error;
+    }
   },
-]
+};
 
-function create_goal(title, desc){
-  DATA.push({
-    id: DATA.length,
-    title: title,
-    data: [desc]
-  });
+// Forecast Card Component
+const ForecastCard = ({ forecast }) => {
+  return (
+    <View style={styles.forecastCard}>
+      <Text style={styles.forecastDate}>{getDayOfWeek(forecast.dt)}</Text>
+      <View style={styles.forecastDetails}>
+        <Text style={styles.forecastTemp}>{Math.round(forecast.main.temp)}°C</Text>
+        <View style={styles.forecastWeather}>
+          <Text style={styles.forecastDescription}>{forecast.weather[0].description}</Text>
+          <View style={styles.forecastIcon}>
+            <Text style={styles.forecastIconText}>{getWeatherIcon(forecast.weather[0].icon)}</Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+};
 
-  Alert.alert('Created');
-}
-
-function edit_goal(id, newTitle, newDesc) {
-  const index = DATA.findIndex(item => item.id === id);
-  if (index !== -1) {
-    DATA[index] = {
-      ...DATA[index],
-      title: newTitle,
-      data: [newDesc]
-    };
-    Alert.alert('Updated');
-  }
-}
-
+// Main App Component
 export default function App() {
-  const [modalCreate, setmodalCreate] = useState(false);
-  const [modalEdit, setmodalEdit] = useState(false);
-  const [title, setTitle] = useState('');
-  const [desc, setDesc] = useState('');
-  const [editingId, setEditingId] = useState(null);
+  const [error, setError] = useState(null);
+  const [weatherData, setWeatherData] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleEdit = (id) => {
-    const item = DATA.find(item => item.id === id);
-    if (item) {
-      setTitle(item.title);
-      setDesc(item.data[0]);
-      setEditingId(id);
-      setmodalEdit(true);
+  const fetchWeatherData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setError('Permission to access location was denied');
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+      const weatherData = await WeatherService.fetchWeather(latitude, longitude);
+      setWeatherData(weatherData);
+    } catch (error) {
+      setError('Error fetching weather data');
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const handleEditSubmit = () => {
-    if (editingId !== null) {
-      edit_goal(editingId, title, desc);
-      setmodalEdit(false);
-      setTitle('');
-      setDesc('');
-      setEditingId(null);
-    }
-  };
+  useEffect(() => {
+    fetchWeatherData();
+  }, [fetchWeatherData]);
 
-  const handleDelete = () => {
-    DATA.pop(
-      id=editingId
-    )
-    Alert.alert("Goal deleted")
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchWeatherData();
+    setRefreshing(false);
+  }, [fetchWeatherData]);
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
   }
-
 
   return (
-    <ImageBackground source={require("./img/background.jpg")} resizeMode="cover" style={styles.image}>  
-      <View style={styles.container}> 
-        <SafeAreaProvider>
-            <SafeAreaView style={styles.container} edges={['top']}>
-            <Text style={styles.Text}>Goal</Text>
-              <SectionList
-                sections={DATA}
-                keyExtractor={(item, index) => item + index}
-                renderItem={({item, index, section}) => (
-                  <View style={styles.item}>
-                    <Text style={styles.title}>{item}</Text>
-                    <TouchableOpacity
-                      style={styles.button}
-                      onPress={() => handleEdit(section.id)}
-                    >
-                      <Text>Edit</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-                renderSectionHeader={({section: {title}}) => (
-                  <Text style={styles.header}>{title}</Text>
-                )}
-              />
-            </SafeAreaView>
-        </SafeAreaProvider>
-        <View>
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={modalCreate}
-            onRequestClose={() => {
-              Alert.alert('Modal has been closed.');
-              setmodalCreate(!modalCreate);
-            }}>
-            <View style={styles.centeredView}>
-              <View style={styles.modalView}>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder='Title' 
-                  onChangeText={setTitle}
-                  value={title}
-                />
-                <TextInput 
-                  style={styles.input} 
-                  placeholder='Description'
-                  onChangeText={setDesc}
-                  value={desc}
-                />
-                <TouchableOpacity
-                  style={[styles.button]}
-                  onPress={() => {
-                    create_goal(title, desc);
-                    setTitle('');
-                    setDesc('');
-                    setmodalCreate(false);
-                  }}>
-                  <Text style={styles.button}>Create Goal</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.button]}
-                  onPress={() => {
-                    setmodalCreate(false);
-                    setTitle('');
-                    setDesc('');
-                  }}>
-                  <Text style={styles.button}>Return</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={modalEdit}
-            onRequestClose={() => {
-              setmodalEdit(false);
-              setTitle('');
-              setDesc('');
-              setEditingId(null);
-            }}>
-            <View style={styles.centeredView}>
-              <View style={styles.modalView}>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder='Title' 
-                  onChangeText={setTitle}
-                  value={title}
-                />
-                <TextInput 
-                  style={styles.input} 
-                  placeholder='Description'
-                  onChangeText={setDesc}
-                  value={desc}
-                />
-                <TouchableOpacity
-                  style={[styles.button]}
-                  onPress={handleEditSubmit}>
-                  <Text style={styles.button}>Edit Goal</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.button]}
-                  onPress={() => {
-                    setmodalEdit(false);
-                    setTitle('');
-                    setDesc('');
-                    setEditingId(null);
-                  }}>
-                  <Text style={styles.button}>Return</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.button]}
-                  onPress={() => {
-                    handleDelete();
-                    setTitle('');
-                    setDesc('');
-                    setmodalEdit(false);
-                  }}>
-                  <Text style={styles.button}>Delete</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
+      {error ? (
+        <Text style={styles.errorText}>{error}</Text>
+      ) : (
+        <View style={styles.forecastContainer}>
+          <Text style={styles.cityName}>{weatherData.city.name}</Text>
+          {weatherData.list.filter((_, index) => index % 8 === 0).map((forecast, index) => (
+            <ForecastCard key={index} forecast={forecast} />
+          ))}
         </View>
-        <View style={styles.bottom_nav_bar}>
-          <TouchableOpacity
-            style={[styles.button]}
-            onPress={() => setmodalCreate(true)}>
-            <Text style={styles.button}>Create Goal</Text>
-          </TouchableOpacity>
-        </View>
-        <StatusBar style="auto" />
-      </View>
-    </ImageBackground>
+      )}
+    </ScrollView>
   );
 }
 
+const getDayOfWeek = (dt) => {
+  const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+  const date = new Date(dt * 1000);
+  return days[date.getDay()];
+};
+
+const getWeatherIcon = (iconCode) => {
+  switch (iconCode) {
+    case '01d':
+      return '☀️';
+    case '01n':
+      return '🌙';
+    case '02d':
+    case '02n':
+      return '⛅';
+    case '03d':
+    case '03n':
+    case '04d':
+    case '04n':
+      return '☁️';
+    case '09d':
+    case '09n':
+      return '🌧️';
+    case '10d':
+    case '10n':
+      return '🌦️';
+    case '11d':
+    case '11n':
+      return '⚡';
+    case '13d':
+    case '13n':
+      return '❄️';
+    case '50d':
+    case '50n':
+      return '🌫️';
+    default:
+      return '❓';
+  }
+};
+
 const styles = StyleSheet.create({
-  centeredView: {
+  container: {
     flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#f5f5f5',
   },
-  Modal: {
-    width:150,
-  },
-  modalView: {
+  forecastContainer: {
     backgroundColor: 'white',
-    borderRadius: 20,
-    width: 350,
-    height: 450,
-    padding: 50,
-    paddingBottom: 100,
-    alignItems: 'center',
+    padding: 20,
+    borderRadius: 15,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.25,
-    shadowRadius: 4,
+    shadowRadius: 3.84,
     elevation: 5,
+    width: '90%',
   },
-  modalInput: {
-    backgroundColor: "Black"
-  },
-  container: {
-    flex: 1,
-    paddingTop: StatusBar.currentHeight,
-    marginHorizontal: 10,
-  },
-  item: {
-    backgroundColor: '#696969',
-    padding: 20,
-    marginVertical: 8,
-    borderRadius: 5,
-  },
-  header: {
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    fontSize: 32
-  },
-  title: {
+  cityName: {
     fontSize: 24,
-    color: "white",
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 10,
   },
-  Text: {
-    fontSize: 40,
-    margin: 10,
-    textAlign: "center",
-    textDecorationLine: "underline"
-  },
-  bottom_nav_bar: {
+  forecastCard: {
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 8,
+    marginVertical: 6,
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    margin: 40,
-    justifyContent: "center"
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  button: {
-    fontSize: 20,
-    color:"white",
-    margin:10,
-    padding: 5,
-    borderRadius: 5,
-    textDecorationLine: "underline",
-    backgroundColor: '#B0B0B0'
+  forecastDate: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    width: '25%',
   },
-  input: {
-    fontSize: 20,
-    borderRadius: 10,
-    margin: 10,
-    padding: 10,
-    width: '100%',
-    backgroundColor: '#f0f0f0',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    color: '#000',
+  forecastDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '75%',
   },
-  image: {
-    flex: 1,
-    justifyContent: 'center',
+  forecastTemp: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    width: '40%',
+    textAlign: 'right',
+    marginRight: 12,
+  },
+  forecastWeather: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '60%',
+  },
+  forecastDescription: {
+    fontSize: 14,
+    marginRight: 6,
+  },
+  forecastIcon: {
+    backgroundColor: '#ccc',
+    borderRadius: 50,
+    padding: 6,
+  },
+  forecastIconText: {
+    fontSize: 16,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
